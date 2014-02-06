@@ -67,6 +67,10 @@ func checkErr(err error) {
 func (r *Req) getResp() (*http.Response, error) {
 	req, err := http.NewRequest("GET", r.Url, nil)
 
+	if err != nil {
+		return new(http.Response), err
+	}
+
 	for _, v := range r.MyHeader {
 		req.Header.Add(v.Key, v.Value)
 	}
