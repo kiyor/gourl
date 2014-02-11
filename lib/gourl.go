@@ -6,7 +6,7 @@
 
 * Creation Date : 01-02-2014
 
-* Last Modified : Wed 29 Jan 2014 07:24:38 PM CST
+* Last Modified : Tue 11 Feb 2014 12:44:38 AM UTC
 
 * Created By : Kiyor
 
@@ -65,11 +65,7 @@ func checkErr(err error) {
 }
 
 func (r *Req) getResp() (*http.Response, error) {
-	req, err := http.NewRequest("GET", r.Url, nil)
-
-	if err != nil {
-		return new(http.Response), err
-	}
+	req, _ := http.NewRequest("GET", r.Url, nil)
 
 	for _, v := range r.MyHeader {
 		req.Header.Add(v.Key, v.Value)
