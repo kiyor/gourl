@@ -6,7 +6,7 @@
 
 * Creation Date : 01-02-2014
 
-* Last Modified : Tue 11 Feb 2014 12:44:38 AM UTC
+* Last Modified : Sat 01 Mar 2014 01:17:13 AM UTC
 
 * Created By : Kiyor
 
@@ -17,12 +17,11 @@ package gourl
 import (
 	"crypto/tls"
 	"fmt"
-	// 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
-	// 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -113,6 +112,12 @@ func (r *Resp) String() string {
 func (r *Req) GetString() string {
 	resp, _ := r.GetFull()
 	return resp.String()
+}
+
+func (r *Req) GetStringSlice() []string {
+	s := r.GetString()
+	slice := strings.Split(s, "\n")
+	return slice[0 : len(slice)-1]
 }
 
 func (r *Req) GetHeader() http.Header {
