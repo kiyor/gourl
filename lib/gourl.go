@@ -6,7 +6,7 @@
 
 * Creation Date : 01-02-2014
 
-* Last Modified : Sat 01 Mar 2014 01:17:13 AM UTC
+* Last Modified : Sat 01 Mar 2014 02:11:07 AM UTC
 
 * Created By : Kiyor
 
@@ -107,6 +107,15 @@ func (r *Resp) String() string {
 		}
 	}
 	return s
+}
+
+func (r *Resp) StringSlice() []string {
+	if r.StatusCode != 200 {
+		return []string{""}
+	}
+	s := r.String()
+	slice := strings.Split(s, "\n")
+	return slice[0 : len(slice)-1]
 }
 
 func (r *Req) GetString() string {

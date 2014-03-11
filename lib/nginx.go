@@ -6,7 +6,7 @@
 
 * Creation Date : 01-10-2014
 
-* Last Modified : Wed 29 Jan 2014 07:25:05 PM CST
+* Last Modified : Tue 11 Mar 2014 09:22:38 PM UTC
 
 * Created By : Kiyor
 
@@ -16,6 +16,7 @@ package gourl
 
 import (
 	// 	"fmt"
+	"errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -74,13 +75,14 @@ func (stat *NginxStatus) UpdateSinceLastUpdate() {
 	stat.SinceLastUpdate = time.Now().Unix() - stat.LastUpdate
 }
 
-func (stat *NginxStatus) Update() {
+func (stat *NginxStatus) Update() error {
+	var err error
 	url := "http://" + stat.Host + stat.StatusUri
 	var r Req
 	r.Url = url
 	fullbody := r.GetString()
 	if fullbody == "" {
-		return
+		return errors.New("request timeout")
 	}
 	body := strings.Split(fullbody, "\n")
 	activeLine := body[0]
@@ -89,21 +91,43 @@ func (stat *NginxStatus) Update() {
 
 	mistLine := body[len(body)-1]
 	active := re1.FindStringSubmatch(activeLine)[0]
-	stat.Active, _ = strconv.Atoi(active)
+	stat.Active, err = strconv.Atoi(active)
+	if err != nil {
+		return err
+	}
 	mist := re2.FindStringSubmatch(mistLine)
 
 	server := re3.FindStringSubmatch(serverLine)
 
-	stat.Reading, _ = strconv.Atoi(mist[1])
-	stat.Writing, _ = strconv.Atoi(mist[2])
-	stat.Waiting, _ = strconv.Atoi(mist[3])
+	stat.Reading, err = strconv.Atoi(mist[1])
+	if err != nil {
+		return err
+	}
+	stat.Writing, err = strconv.Atoi(mist[2])
+	if err != nil {
+		return err
+	}
+	stat.Waiting, err = strconv.Atoi(mist[3])
+	if err != nil {
+		return err
+	}
 	stat.LastUpdate = time.Now().Unix()
 
 	var sv NginxServer
 
-	sv.Accepts, _ = strconv.Atoi(server[1])
-	sv.Handled, _ = strconv.Atoi(server[2])
-	sv.Requests, _ = strconv.Atoi(server[3])
+	sv.Accepts, err = strconv.Atoi(server[1])
+	if err != nil {
+		return err
+	}
+	sv.Handled, err = strconv.Atoi(server[2])
+	if err != nil {
+		return err
+	}
+	sv.Requests, err = strconv.Atoi(server[3])
+	if err != nil {
+		return err
+	}
 
 	stat.Server = sv
+	return nil
 }
