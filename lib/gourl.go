@@ -6,7 +6,7 @@
 
 * Creation Date : 01-02-2014
 
-* Last Modified : Sat 01 Mar 2014 02:11:07 AM UTC
+* Last Modified : Fri 21 Mar 2014 06:49:28 PM UTC
 
 * Created By : Kiyor
 
@@ -63,8 +63,8 @@ func checkErr(err error) {
 	}
 }
 
-func (r *Req) getResp() (*http.Response, error) {
-	req, _ := http.NewRequest("GET", r.Url, nil)
+func (r *Req) getResp(method string) (*http.Response, error) {
+	req, _ := http.NewRequest(method, r.Url, nil)
 
 	for _, v := range r.MyHeader {
 		req.Header.Add(v.Key, v.Value)
@@ -79,7 +79,7 @@ func (r *Req) getResp() (*http.Response, error) {
 }
 
 func (r *Req) GetFull() (Resp, error) {
-	resp, err := r.getResp()
+	resp, err := r.getResp("GET")
 	if err != nil {
 		return Resp{}, err
 	}
@@ -129,8 +129,14 @@ func (r *Req) GetStringSlice() []string {
 	return slice[0 : len(slice)-1]
 }
 
-func (r *Req) GetHeader() http.Header {
-	resp, err := http.Head(r.Url)
-	checkErr(err)
-	return resp.Header
+func (r *Req) GetHeader() (http.Header, error) {
+	// 	resp, err := http.Head(r.Url)
+	// 	checkErr(err)
+	// 	return resp.Header
+	resp, err := r.getResp("HEAD")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return resp.Header, err
 }
