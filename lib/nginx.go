@@ -6,7 +6,7 @@
 
 * Creation Date : 01-10-2014
 
-* Last Modified : Tue 11 Mar 2014 09:22:38 PM UTC
+* Last Modified : Thu 01 May 2014 09:30:51 PM UTC
 
 * Created By : Kiyor
 
@@ -80,11 +80,15 @@ func (stat *NginxStatus) Update() error {
 	url := "http://" + stat.Host + stat.StatusUri
 	var r Req
 	r.Url = url
-	fullbody := r.GetString()
-	if fullbody == "" {
-		return errors.New("request timeout")
+	r.Timeout = "2s"
+	fullbody, err := r.GetString()
+	if err != nil {
+		return err
 	}
 	body := strings.Split(fullbody, "\n")
+	if len(body) == 0 {
+		return errors.New("not able to get correct resp")
+	}
 	activeLine := body[0]
 
 	serverLine := body[2]

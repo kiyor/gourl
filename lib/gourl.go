@@ -6,7 +6,7 @@
 
 * Creation Date : 01-02-2014
 
-* Last Modified : Fri 21 Mar 2014 06:49:28 PM UTC
+* Last Modified : Wed 21 May 2014 09:18:05 PM UTC
 
 * Created By : Kiyor
 
@@ -16,6 +16,7 @@ package gourl
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -28,6 +29,7 @@ import (
 type Req struct {
 	http.Request
 	Url      string
+	Timeout  string
 	MyHeader []*MyHeader
 }
 
@@ -41,7 +43,7 @@ type MyHeader struct {
 }
 
 var (
-	timeout   = 3 * time.Second
+	timeout   time.Duration
 	transport = http.Transport{
 		Dial:               dialTimeout,
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
@@ -63,8 +65,19 @@ func checkErr(err error) {
 	}
 }
 
+type tmpresp struct {
+	resp *http.Response
+	err  error
+}
+
 func (r *Req) getResp(method string) (*http.Response, error) {
-	req, _ := http.NewRequest(method, r.Url, nil)
+	var err error
+	var req *http.Request
+	req, err = http.NewRequest(method, r.Url, nil)
+	if err != nil {
+		// 		fmt.Println("err here1", err.Error())
+		return nil, err
+	}
 
 	for _, v := range r.MyHeader {
 		req.Header.Add(v.Key, v.Value)
@@ -74,8 +87,28 @@ func (r *Req) getResp(method string) (*http.Response, error) {
 		req.Host = r.Host
 	}
 
-	resp, err := client.Do(req)
-	return resp, err
+	timeout, err = time.ParseDuration(r.Timeout)
+	if err != nil {
+		timeout = 3 * time.Second
+	}
+	t := time.Tick(timeout)
+	resp := make(chan tmpresp)
+
+	go func(r chan tmpresp) {
+		resp, err := client.Do(req)
+		if err != nil {
+			// 		fmt.Println("err here2", err.Error())
+			r <- tmpresp{resp, err}
+		}
+		r <- tmpresp{resp, nil}
+	}(resp)
+	select {
+	case r := <-resp:
+		return r.resp, r.err
+	case <-t:
+		return nil, errors.New("Timeout")
+	}
+	// 	return resp, err
 }
 
 func (r *Req) GetFull() (Resp, error) {
@@ -118,15 +151,18 @@ func (r *Resp) StringSlice() []string {
 	return slice[0 : len(slice)-1]
 }
 
-func (r *Req) GetString() string {
-	resp, _ := r.GetFull()
-	return resp.String()
+func (r *Req) GetString() (string, error) {
+	resp, err := r.GetFull()
+	return resp.String(), err
 }
 
-func (r *Req) GetStringSlice() []string {
-	s := r.GetString()
+func (r *Req) GetStringSlice() ([]string, error) {
+	s, err := r.GetString()
+	if err != nil {
+		return nil, err
+	}
 	slice := strings.Split(s, "\n")
-	return slice[0 : len(slice)-1]
+	return slice[0 : len(slice)-1], nil
 }
 
 func (r *Req) GetHeader() (http.Header, error) {
