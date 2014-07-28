@@ -6,7 +6,7 @@
 
 * Creation Date : 01-02-2014
 
-* Last Modified : Wed 21 May 2014 09:18:05 PM UTC
+* Last Modified : Mon 28 Jul 2014 11:25:10 PM UTC
 
 * Created By : Kiyor
 
@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -70,10 +71,10 @@ type tmpresp struct {
 	err  error
 }
 
-func (r *Req) getResp(method string) (*http.Response, error) {
+func (r *Req) getResp(method string, body io.Reader) (*http.Response, error) {
 	var err error
 	var req *http.Request
-	req, err = http.NewRequest(method, r.Url, nil)
+	req, err = http.NewRequest(method, r.Url, body)
 	if err != nil {
 		// 		fmt.Println("err here1", err.Error())
 		return nil, err
@@ -112,11 +113,25 @@ func (r *Req) getResp(method string) (*http.Response, error) {
 }
 
 func (r *Req) GetFull() (Resp, error) {
-	resp, err := r.getResp("GET")
+	resp, err := r.getResp("GET", nil)
 	if err != nil {
 		return Resp{}, err
 	}
 	return Resp{*resp}, err
+}
+
+func (r *Req) PostStringGetFull(body string) (Resp, error) {
+	b := strings.NewReader(body)
+	resp, err := r.getResp("POST", b)
+	if err != nil {
+		return Resp{}, err
+	}
+	return Resp{*resp}, err
+}
+
+func (r *Req) PostStringGetString(body string) (string, error) {
+	resp, err := r.PostStringGetFull(body)
+	return resp.String(), err
 }
 
 func (r *Resp) String() string {
@@ -169,7 +184,7 @@ func (r *Req) GetHeader() (http.Header, error) {
 	// 	resp, err := http.Head(r.Url)
 	// 	checkErr(err)
 	// 	return resp.Header
-	resp, err := r.getResp("HEAD")
+	resp, err := r.getResp("HEAD", nil)
 	if err != nil {
 		return nil, err
 	}
